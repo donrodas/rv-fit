@@ -5,10 +5,10 @@ const FILES_TO_CACHE = [
   "./index.html",
   "./manifest.json",
   "./sw.js",
-  "./splash.png",          // Asegúrate de que tu archivo sea .png
+  "./splash.png",
   "./apple-touch-icon.png",
-  "./icon-192.png",        // Asegúrate de renombrar tu icon-129 a icon-192
-  "./icon-512.png"         // Asegúrate de convertir tu jpg a png
+  "./icon-192.png",
+  "./icon-512.png"
 ];
 
 self.addEventListener("install", event => {
