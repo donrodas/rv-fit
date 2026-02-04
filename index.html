@@ -868,6 +868,29 @@ function showUpdateToast(worker) {
   });
 }
 </script>
+<script>
+(function () {
+  const isStandalone =
+    (window.navigator.standalone === true) ||
+    window.matchMedia?.('(display-mode: standalone)')?.matches;
+
+  if (!isStandalone) {
+    const b = document.createElement('div');
+    b.style.position = 'fixed';
+    b.style.top = '10px';
+    b.style.left = '50%';
+    b.style.transform = 'translateX(-50%)';
+    b.style.background = 'rgba(0,0,0,.85)';
+    b.style.color = 'white';
+    b.style.padding = '8px 12px';
+    b.style.borderRadius = '14px';
+    b.style.fontSize = '12px';
+    b.style.zIndex = '999999';
+    b.textContent = 'Estás abriendo en Safari. Para modo App: Compartir → Agregar a pantalla de inicio → abrir desde el ícono.';
+    document.body.appendChild(b);
+  }
+})();
+</script>
 
 </body>
 </html>
