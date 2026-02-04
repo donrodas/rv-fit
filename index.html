@@ -32,7 +32,7 @@
   --scheduled:#fde68a;
   --done:#22c55e;
   --border:#cbd5e1;
-  --bg:#f8fafc; /* Apple clean */
+  --bg:#f8fafc;
   --weekend:#e5e7eb;
 }
 
@@ -73,7 +73,6 @@ body{
   opacity:1;
   transition:opacity .45s ease;
 
-  /* Safe areas */
   padding-top: env(safe-area-inset-top);
   padding-right: env(safe-area-inset-right);
   padding-bottom: env(safe-area-inset-bottom);
@@ -167,6 +166,7 @@ button.active{
   background:white;
   user-select:none;
   -webkit-user-select:none;
+  touch-action: manipulation;
 }
 .day.weekend{background:var(--weekend);}
 .day.selected{border:2px solid var(--primary);}
@@ -181,13 +181,6 @@ button.active{
 .num{margin-top:6px;font-weight:700;}
 .time{font-size:.65rem;}
 .empty{visibility:hidden;}
-
-.programmer{
-  display:flex;
-  gap:6px;
-  justify-content:center;
-  margin:.5rem 0;
-}
 
 /* QUICK PROGRAM */
 .quick-toggle{display:flex;justify-content:center;margin:.4rem 0;}
@@ -249,7 +242,7 @@ button.active{
   justify-content:center;
   align-items:center;
   gap:10px;
-  margin:.6rem 0;
+  margin:.2rem 0 0;
   font-size:.75rem;
 }
 .clean-bar button{font-size:.7rem;}
@@ -334,12 +327,46 @@ button.active{
   transition:.3s;
 }
 .toast.show{opacity:1;}
+
+/* ====== PROGRAMACIÓN (desplegable) ====== */
+.program-group{
+  margin-top:.65rem;
+  border:1px solid var(--border);
+  border-radius:14px;
+  overflow:hidden;
+}
+.program-header{
+  padding:.6rem;
+  font-weight:900;
+  background:linear-gradient(135deg, rgba(37,99,235,.08), rgba(96,165,250,.12));
+  border-bottom:1px solid rgba(203,213,225,.8);
+  cursor:pointer;
+  text-align:center;
+  color:#0f172a;
+  user-select:none;
+  -webkit-user-select:none;
+}
+.program-content{
+  display:none;
+  padding:.6rem;
+  flex-direction:column;
+  gap:.6rem;
+}
+.program-content.show{
+  display:flex;
+}
+.program-line{
+  display:flex;
+  gap:6px;
+  justify-content:center;
+  flex-wrap:wrap;
+}
 </style>
 </head>
 
 <body>
 
-<!-- Splash overlay (web). Se oculta rápido al cargar -->
+<!-- Splash overlay (web) -->
 <div id="splash" aria-hidden="true">
   <div style="display:flex; flex-direction:column; align-items:center; gap:14px;">
     <img src="./apple-touch-icon.png" alt="RV FIT">
@@ -349,92 +376,105 @@ button.active{
 
 <div class="container">
 
-<h1>Entrenamientos</h1>
+  <h1>Entrenamientos</h1>
 
-<div class="nav">
-  <button onclick="prevMonth()">◀</button>
-  <strong id="label"></strong>
-  <button onclick="nextMonth()">▶</button>
-</div>
-
-<div class="center" id="monthNowWrap" style="display:none">
-  <button onclick="goToCurrentMonth()">📍 Mes actual</button>
-</div>
-
-<div class="calendar" id="calendar"></div>
-
-<div class="programmer" id="programmer">
-  <button onclick="setTime('06:30')">06:30</button>
-  <button onclick="setTime('07:00')">07:00</button>
-  <button onclick="setTime('07:30')">07:30</button>
-  <button onclick="setTime('--:--')">--:--</button>
-</div>
-
-<div class="quick-toggle" id="quickToggle">
-  <button onclick="toggleQuick()">⚡ Programación rápida</button>
-</div>
-
-<div class="quick-panel" id="quickPanel">
-  <div class="quick-row">
-    <strong>Día</strong>
-    <button onclick="toggleQuickDay(1)">L</button>
-    <button onclick="toggleQuickDay(2)">M</button>
-    <button onclick="toggleQuickDay(3)">W</button>
-    <button onclick="toggleQuickDay(4)">J</button>
-    <button onclick="toggleQuickDay(5)">V</button>
-    <button onclick="toggleQuickDay(6)">S</button>
-    <button onclick="toggleQuickDay(0)">D</button>
+  <div class="nav">
+    <button onclick="prevMonth()">◀</button>
+    <strong id="label"></strong>
+    <button onclick="nextMonth()">▶</button>
   </div>
-  <div class="quick-row">
-    <strong>Hora</strong>
-    <button onclick="setQuickTime('06:30')">06:30</button>
-    <button onclick="setQuickTime('07:00')">07:00</button>
-    <button onclick="setQuickTime('07:30')">07:30</button>
-    <button onclick="setQuickTime('--:--')">--:--</button>
+
+  <div class="center" id="monthNowWrap" style="display:none">
+    <button onclick="goToCurrentMonth()">📍 Mes actual</button>
   </div>
+
+  <div class="calendar" id="calendar"></div>
+
+  <!-- ✅ Semana actual justo debajo del calendario (solo mes actual) -->
+  <div class="weekbar" id="weekBar" style="display:none">
+    <div class="weekbar-head">
+      <div class="weekbar-title">Semana actual</div>
+      <div class="weekbar-meta" id="weekMeta">0/0</div>
+    </div>
+    <div class="bar"><div class="fill" id="weekFill"></div></div>
+  </div>
+
+  <!-- ✅ Resumen anual justo debajo de la semana actual -->
   <div class="center">
-    <button onclick="applyQuick()">Programar</button>
+    <button onclick="toggleAnnual()">📊 Resumen anual</button>
   </div>
-</div>
+  <div class="annual" id="annual"></div>
 
-<div class="weekbar" id="weekBar" style="display:none">
-  <div class="weekbar-head">
-    <div class="weekbar-title">Semana actual</div>
-    <div class="weekbar-meta" id="weekMeta">0/0</div>
+  <!-- ✅ Programación (desplegable) — visible desde mes actual en adelante -->
+  <div class="program-group" id="programGroup" style="display:none">
+    <div class="program-header" onclick="toggleProgramGroup()">⚙️ Programación</div>
+
+    <div class="program-content" id="programContent">
+      <!-- 1) Horarios -->
+      <div class="program-line" id="programmer">
+        <button onclick="setTime('06:30')">06:30</button>
+        <button onclick="setTime('07:00')">07:00</button>
+        <button onclick="setTime('07:30')">07:30</button>
+        <button onclick="setTime('--:--')">--:--</button>
+      </div>
+
+      <!-- 2) Programación rápida -->
+      <div class="quick-toggle" id="quickToggle">
+        <button onclick="toggleQuick()">⚡ Programación rápida</button>
+      </div>
+
+      <div class="quick-panel" id="quickPanel">
+        <div class="quick-row">
+          <strong>Día</strong>
+          <button onclick="toggleQuickDay(1)">L</button>
+          <button onclick="toggleQuickDay(2)">M</button>
+          <button onclick="toggleQuickDay(3)">W</button>
+          <button onclick="toggleQuickDay(4)">J</button>
+          <button onclick="toggleQuickDay(5)">V</button>
+          <button onclick="toggleQuickDay(6)">S</button>
+          <button onclick="toggleQuickDay(0)">D</button>
+        </div>
+        <div class="quick-row">
+          <strong>Hora</strong>
+          <button onclick="setQuickTime('06:30')">06:30</button>
+          <button onclick="setQuickTime('07:00')">07:00</button>
+          <button onclick="setQuickTime('07:30')">07:30</button>
+          <button onclick="setQuickTime('--:--')">--:--</button>
+        </div>
+        <div class="center">
+          <button onclick="applyQuick()">Programar</button>
+        </div>
+      </div>
+
+      <!-- 3) Limpieza (solo mes actual) -->
+      <div class="clean-bar" id="cleanBar" style="display:none">
+        <button id="cw" onclick="selectClean('week')">🧹 Semana</button>
+        <button id="cm" onclick="selectClean('month')">🗑 Mes</button>
+        <button id="ca" onclick="selectClean('all')">🔥 Todo</button>
+        <span onclick="executeClean()">Borrar</span>
+      </div>
+    </div>
   </div>
-  <div class="bar"><div class="fill" id="weekFill"></div></div>
-</div>
 
-<div class="history" id="historyPanel" style="display:none">
-  <div class="history-inner">
-    <div class="hlabel">Programados</div>
-    <div class="hlabel">Reales</div>
-    <button onclick="saveHistory()">Guardar</button>
+  <!-- Histórico (solo meses pasados) -->
+  <div class="history" id="historyPanel" style="display:none">
+    <div class="history-inner">
+      <div class="hlabel">Programados</div>
+      <div class="hlabel">Reales</div>
+      <button onclick="saveHistory()">Guardar</button>
 
-    <input id="hPlan" type="number" inputmode="numeric">
-    <input id="hDone" type="number" inputmode="numeric">
-    <div></div>
+      <input id="hPlan" type="number" inputmode="numeric">
+      <input id="hDone" type="number" inputmode="numeric">
+      <div></div>
+    </div>
   </div>
-</div>
 
-<div class="center">
-  <button onclick="toggleAnnual()">📊 Resumen anual</button>
-</div>
-<div class="annual" id="annual"></div>
-
-</div>
-<div class="clean-bar" id="cleanBar">
-  <button id="cw" onclick="selectClean('week')">🧹 Semana</button>
-  <button id="cm" onclick="selectClean('month')">🗑 Mes</button>
-  <button id="ca" onclick="selectClean('all')">🔥 Todo</button>
-  <span onclick="executeClean()">Borrar</span>
-</div>
-
+</div><!-- /container -->
 
 <div class="toast" id="toast"></div>
 
 <script>
-/* Splash overlay: ocultar suave sin parpadeo + sin flash */
+/* Splash overlay: ocultar suave */
 (function () {
   const splash = document.getElementById('splash');
   if (!splash) return;
@@ -465,7 +505,7 @@ button.active{
 </script>
 
 <script>
-/* Entrenamientos RV - V1 + mejoras solicitadas */
+/* Entrenamientos RV */
 const STORAGE="rv-data", HST="rv-history";
 let data=JSON.parse(localStorage.getItem(STORAGE)||"{}");
 let history=JSON.parse(localStorage.getItem(HST)||"{}");
@@ -492,6 +532,8 @@ const monthNowWrap=document.getElementById("monthNowWrap");
 const weekBar=document.getElementById("weekBar");
 const weekMeta=document.getElementById("weekMeta");
 const weekFill=document.getElementById("weekFill");
+const programGroup=document.getElementById("programGroup");
+const programContent=document.getElementById("programContent");
 
 const dayNames=["L","M","M","J","V","S","D"];
 const monthNames=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -516,6 +558,9 @@ function isCurrentMonthView(){
   const n=new Date();
   return current.getFullYear()===n.getFullYear() && current.getMonth()===n.getMonth();
 }
+function isFutureOrCurrentMonth(){
+  return !isPastMonth();
+}
 
 function keyToDate(key){
   const [yy,mm,dd]=key.split("-").map(Number);
@@ -523,8 +568,10 @@ function keyToDate(key){
   dt.setHours(0,0,0,0);
   return dt;
 }
-function dateToKey(dt){
-  return `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}`;
+
+/* ===== Programación desplegable ===== */
+function toggleProgramGroup(){
+  programContent.classList.toggle("show");
 }
 
 /* ========== RENDER ========== */
@@ -540,13 +587,24 @@ function render(){
 
   // UI visibility rules
   cal.classList.toggle("past",past);
-  programmer.style.display = past ? "none" : "flex";
-  quickToggle.style.display = past ? "none" : "flex";
-  quickPanel.classList.remove("show");
-  cleanBar.style.display = past ? "none" : "flex";
-  historyPanel.style.display = past ? "flex" : "none";
+
+  // Semana actual: solo mes actual
   weekBar.style.display = (!past && isCurrent) ? "block" : "none";
+
+  // Histórico: solo meses pasados
+  historyPanel.style.display = past ? "flex" : "none";
+
+  // Botón "Mes actual"
   monthNowWrap.style.display = isCurrent ? "none" : "flex";
+
+  // Programación: mes actual y futuros (no pasado)
+  programGroup.style.display = past ? "none" : "block";
+
+  // Limpieza: solo mes actual
+  cleanBar.style.display = (!past && isCurrent) ? "flex" : "none";
+
+  // cerrar panel rápido al cambiar mes
+  quickPanel.classList.remove("show");
 
   // fill history inputs if present
   if(past){
@@ -575,7 +633,7 @@ function render(){
 
     cell.innerHTML=`<div class="num">${d}</div><div class="time">${data[key]?.time||""}</div>`;
 
-    // click: select, and toggle done only if scheduled and date <= today and not past month view
+    // click (desktop): toggle done if scheduled and date <= today and not past month view
     cell.addEventListener("click", ()=>{
       selected=key;
       if(!past && data[key] && date<=today){
@@ -585,31 +643,52 @@ function render(){
       render();
     });
 
-    // long press delete (only current/future month view, not past)
-    const startPress = (ev)=>{
-      if(past) return;
+    // long press delete (iOS compatible)
+    let longPressTriggered = false;
+
+    const startPress = (ev) => {
+      if (past) return;
+
+      longPressTriggered = false;
       pressedKey = key;
       clearTimeout(pressTimer);
-      pressTimer = setTimeout(()=>{
-        if(pressedKey !== key) return;
-        if(data[key]){
+
+      pressTimer = setTimeout(() => {
+        longPressTriggered = true;
+
+        if (pressedKey !== key) return;
+
+        if (data[key]) {
           delete data[key];
           save();
           showToast("Día eliminado");
-          if(selected===key) selected=null;
+          if (selected === key) selected = null;
           render();
-        }else{
+        } else {
           showToast("Nada que borrar");
         }
       }, LONG_PRESS_MS);
-      ev.preventDefault?.();
-    };
-    const endPress = ()=>{
-      pressedKey=null;
-      clearTimeout(pressTimer);
     };
 
-    cell.addEventListener("touchstart", startPress, {passive:false});
+    const endPress = (ev) => {
+      clearTimeout(pressTimer);
+      pressedKey = null;
+
+      if (longPressTriggered) return;
+
+      // iOS: forzamos tap (a veces no dispara click)
+      if (ev && (ev.type === "touchend" || ev.type === "touchcancel")) {
+        selected = key;
+
+        if (!past && data[key] && date <= today) {
+          data[key].done = !data[key].done;
+          save();
+        }
+        render();
+      }
+    };
+
+    cell.addEventListener("touchstart", startPress, { passive: false });
     cell.addEventListener("touchend", endPress);
     cell.addEventListener("touchcancel", endPress);
     cell.addEventListener("mousedown", startPress);
@@ -622,7 +701,7 @@ function render(){
   if(!past && isCurrent){
     renderWeekBar();
   }
-  renderAnnual(); // keep annual contents synced
+  renderAnnual();
 }
 
 /* ========== PROGRAMACIÓN MANUAL ========== */
@@ -644,7 +723,6 @@ function toggleQuickDay(d){
 function setQuickTime(t){
   if(isPastMonth()) return;
   quickTime=t;
-  // remove active only from Hora row buttons
   const row = event.target.closest(".quick-row");
   row.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
   event.target.classList.add("active");
@@ -660,7 +738,7 @@ function applyQuick(){
     if(dt.getMonth()!==m) continue;
     if(quickDays.has(dt.getDay())){
       const k=`${y}-${m}-${d}`;
-      if(!data[k]) data[k]={time:quickTime,done:false}; // no pisa existentes
+      if(!data[k]) data[k]={time:quickTime,done:false};
     }
   }
   save();
@@ -668,10 +746,10 @@ function applyQuick(){
   render();
 }
 
-/* ========== WEEK BAR (Semana actual: programados a la fecha vs reales) ========== */
+/* ========== WEEK BAR ========== */
 function startOfWeekMonday(dt){
   const d=new Date(dt); d.setHours(0,0,0,0);
-  const day=(d.getDay()+6)%7; // Mon=0 ... Sun=6
+  const day=(d.getDay()+6)%7;
   d.setDate(d.getDate()-day);
   return d;
 }
@@ -684,7 +762,6 @@ function renderWeekBar(){
   Object.keys(data).forEach(k=>{
     const dt=keyToDate(k);
     if(dt < ws || dt > we) return;
-    // "a la fecha": solo fechas que ya ocurrieron (<= hoy)
     if(dt > today) return;
     planned += 1;
     if(data[k].done) done += 1;
@@ -773,7 +850,6 @@ function renderAnnual(){
   for(let m=0; m<12; m++){
     let plan=0, done=0;
 
-    // prefer historic override if present
     const hk=`${y}-${m}`;
     if(history[hk]){
       plan = Number(history[hk].plan || 0);
@@ -813,21 +889,18 @@ function goToCurrentMonth(){ current=new Date(); selected=null; render(); }
 /* init */
 render();
 </script>
+
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
       const reg = await navigator.serviceWorker.register('./sw.js', { scope: '/rv-fit/' });
-
-      // 🔥 Fuerza check de update (iOS/GitHub Pages)
       await reg.update();
 
-      // ✅ Si ya hay una versión nueva esperando, muestra toast
       if (reg.waiting && navigator.serviceWorker.controller) {
         showUpdateToast(reg.waiting);
       }
 
-      // ✅ Si se detecta una nueva versión en esta sesión
       reg.addEventListener('updatefound', () => {
         const newWorker = reg.installing;
         if (!newWorker) return;
@@ -839,7 +912,6 @@ if ('serviceWorker' in navigator) {
         });
       });
 
-      // ✅ Cuando el nuevo SW toma control, recarga (una sola vez)
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         if (window.__reloading) return;
         window.__reloading = true;
@@ -853,7 +925,6 @@ if ('serviceWorker' in navigator) {
 }
 
 function showUpdateToast(worker) {
-  // Evita duplicados
   if (document.getElementById('updateToast')) return;
 
   const toast = document.createElement("div");
@@ -889,7 +960,6 @@ function showUpdateToast(worker) {
   document.body.appendChild(toast);
 
   document.getElementById('btnUpdate').addEventListener('click', () => {
-    // Activa la nueva versión, el reload lo dispara controllerchange
     worker.postMessage("SKIP_WAITING");
   });
 }
