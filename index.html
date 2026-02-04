@@ -3,17 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <title>Entrenamientos RV</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2563eb">
+<meta name="format-detection" content="telephone=no">
+
 <link rel="manifest" href="./manifest.json">
 
-<meta name="theme-color" content="#2563eb">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="RV FIT">
 
-<link rel="apple-touch-icon" href="./apple-touch-icon.png">
-<link rel="icon" href="./icon-512.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
 
+<!-- iOS PWA Splash (iPhone 16 Pro) -->
+<link rel="apple-touch-startup-image"
+      href="./splash-iphone16pro-portrait-1206x2622.png"
+      media="screen and (device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+<link rel="apple-touch-startup-image"
+      href="./splash-iphone16pro-landscape-2622x1206.png"
+      media="screen and (device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)">
 
 <style>
 :root{
@@ -22,15 +32,70 @@
   --scheduled:#fde68a;
   --done:#22c55e;
   --border:#cbd5e1;
-  --bg:#f1f5f9;
+  --bg:#f8fafc; /* Apple clean */
   --weekend:#e5e7eb;
+}
+
+/* Feel de app iOS */
+html, body{
+  height:100%;
+  background:var(--bg);
+}
+*{
+  -webkit-touch-callout:none;
 }
 body{
   margin:0;
   font-family:system-ui,-apple-system,sans-serif;
   background:var(--bg);
-  padding:1rem;
+
+  /* Safe areas iOS */
+  padding-top: calc(1rem + env(safe-area-inset-top));
+  padding-right: calc(1rem + env(safe-area-inset-right));
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+  padding-left: calc(1rem + env(safe-area-inset-left));
+
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+
+  overscroll-behavior-y: none;
 }
+
+/* ===== Splash overlay (web) ===== */
+#splash{
+  position:fixed;
+  inset:0;
+  background:var(--bg);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+  opacity:1;
+  transition:opacity .25s ease;
+
+  /* Safe areas */
+  padding-top: env(safe-area-inset-top);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+}
+#splash.hide{
+  opacity:0;
+  pointer-events:none;
+}
+#splash img{
+  width:160px;
+  height:160px;
+  border-radius:28px;
+  box-shadow:0 18px 40px rgba(0,0,0,.18);
+}
+#splash .splash-title{
+  font: 600 12px system-ui,-apple-system,sans-serif;
+  color:#475569;
+  letter-spacing:.2px;
+}
+/* ===== Fin splash overlay ===== */
+
 .container{
   max-width:420px;
   margin:auto;
@@ -39,6 +104,7 @@ body{
   border-radius:18px;
   box-shadow:0 10px 25px rgba(0,0,0,.15);
 }
+
 h1{text-align:center;margin:.2rem 0 .6rem;font-size:1.1rem;}
 
 button{
@@ -101,7 +167,6 @@ button.active{
   background:white;
   user-select:none;
   -webkit-user-select:none;
-  -webkit-touch-callout:none;
 }
 .day.weekend{background:var(--weekend);}
 .day.selected{border:2px solid var(--primary);}
@@ -219,7 +284,7 @@ button.active{
   font-size:.68rem;
 }
 .history-inner input{
-  width:72px;               /* proporcional: no enorme */
+  width:72px;
   padding:.28rem .25rem;
   font-size:.72rem;
   text-align:center;
@@ -227,7 +292,7 @@ button.active{
   border-radius:10px;
 }
 .history-inner button{
-  grid-row: 1 / span 2;     /* ocupa alto de 2 filas */
+  grid-row: 1 / span 2;
   height:100%;
   padding:.35rem .7rem;
   font-size:.72rem;
@@ -273,6 +338,15 @@ button.active{
 </head>
 
 <body>
+
+<!-- Splash overlay (web). Se oculta rápido al cargar -->
+<div id="splash" aria-hidden="true">
+  <div style="display:flex; flex-direction:column; align-items:center; gap:14px;">
+    <img src="./splash.png" alt="RV FIT">
+    <div class="splash-title">RV FIT</div>
+  </div>
+</div>
+
 <div class="container">
 
 <h1>Entrenamientos RV</h1>
@@ -358,6 +432,37 @@ button.active{
 </div>
 
 <div class="toast" id="toast"></div>
+
+<script>
+/* Splash overlay: ocultar suave sin parpadeo + sin flash */
+(function () {
+  const splash = document.getElementById('splash');
+  if (!splash) return;
+
+  const MIN_MS = 500;
+  const start = Date.now();
+
+  function hideSplash() {
+    const elapsed = Date.now() - start;
+    const wait = Math.max(0, MIN_MS - elapsed);
+
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        splash.classList.add('hide');
+        setTimeout(() => splash.remove(), 400);
+      });
+    }, wait);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', hideSplash, { once: true });
+  } else {
+    hideSplash();
+  }
+
+  setTimeout(hideSplash, 2500);
+})();
+</script>
 
 <script>
 /* Entrenamientos RV - V1 + mejoras solicitadas */
@@ -658,7 +763,6 @@ function toggleAnnual(){
 }
 function renderAnnual(){
   if(!annual.classList.contains("show")){
-    // igual mantenemos datos listos, pero no hace falta repintar
     return;
   }
   annual.innerHTML="";
@@ -709,12 +813,22 @@ function goToCurrentMonth(){ current=new Date(); selected=null; render(); }
 /* init */
 render();
 </script>
+
 <script>
+/* Service Worker register (robusto para updates) */
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('SW registrado', reg.scope))
-      .catch(err => console.error('SW error', err));
+  window.addEventListener('load', async () => {
+    try {
+      const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (window.__reloading) return;
+        window.__reloading = true;
+        window.location.reload();
+      });
+    } catch (err) {
+      console.error('SW error', err);
+    }
   });
 }
 </script>
