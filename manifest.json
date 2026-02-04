@@ -1,6 +1,6 @@
 {
-  "name": "Entrenamientos RV",
-  "short_name": "RV FIT",
+  "name": "RV fit",
+  "short_name": "RV fit",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#f8fafc",
@@ -24,6 +24,7 @@
     }
   ]
 }
+
 
 
 
