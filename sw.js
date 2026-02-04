@@ -1,4 +1,4 @@
-const CACHE_NAME = "rv-fit-v3";
+const CACHE_NAME = "rv-fit-v12";
 
 const FILES_TO_CACHE = [
   "./",
