@@ -405,13 +405,6 @@ button.active{
   <div class="bar"><div class="fill" id="weekFill"></div></div>
 </div>
 
-<div class="clean-bar" id="cleanBar">
-  <button id="cw" onclick="selectClean('week')">🧹 Semana</button>
-  <button id="cm" onclick="selectClean('month')">🗑 Mes</button>
-  <button id="ca" onclick="selectClean('all')">🔥 Todo</button>
-  <span onclick="executeClean()">Borrar</span>
-</div>
-
 <div class="history" id="historyPanel" style="display:none">
   <div class="history-inner">
     <div class="hlabel">Programados</div>
@@ -430,6 +423,13 @@ button.active{
 <div class="annual" id="annual"></div>
 
 </div>
+<div class="clean-bar" id="cleanBar">
+  <button id="cw" onclick="selectClean('week')">🧹 Semana</button>
+  <button id="cm" onclick="selectClean('month')">🗑 Mes</button>
+  <button id="ca" onclick="selectClean('all')">🔥 Todo</button>
+  <span onclick="executeClean()">Borrar</span>
+</div>
+
 
 <div class="toast" id="toast"></div>
 
