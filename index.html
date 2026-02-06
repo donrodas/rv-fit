@@ -1174,10 +1174,12 @@ function toggleAnnual(){
 
   if(isOpen){
     btn.textContent = "📊 Ocultar resumen anual";
+    renderAnnual(); // ✅ fuerza pintar cuando se abre
   } else {
     btn.textContent = "📊 Mostrar resumen anual";
   }
 }
+
 
 function renderAnnual(){
   if(!annual.classList.contains("show")){
