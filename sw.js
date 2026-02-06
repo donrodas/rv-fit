@@ -1,6 +1,6 @@
-/* sw.js — RV FIT (GitHub Pages: /rv-fit/) */
+/* sw.js — RV FIT (GitHub Pages: /rv-fit/) — V4 */
 
-const VERSION = "rvfit-v4-2026-02-06c";
+const VERSION = "rvfit-v4-2026-02-06";
 const STATIC_CACHE = `${VERSION}-static`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 const BASE = "/rv-fit/";
@@ -31,7 +31,9 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
       const keys = await caches.keys();
-      await Promise.all(keys.map((k) => (!k.startsWith(VERSION) ? caches.delete(k) : null)));
+      await Promise.all(
+        keys.map((k) => (!k.startsWith(VERSION) ? caches.delete(k) : null))
+      );
       await self.clients.claim();
     })()
   );
@@ -42,8 +44,10 @@ self.addEventListener("message", (event) => {
 });
 
 function isNavigationRequest(request) {
-  return request.mode === "navigate" ||
-    (request.headers.get("accept") || "").includes("text/html");
+  return (
+    request.mode === "navigate" ||
+    (request.headers.get("accept") || "").includes("text/html")
+  );
 }
 
 function isStaticAsset(url) {
@@ -63,25 +67,27 @@ function isStaticAsset(url) {
   );
 }
 
-async function networkFirst(request) {
-  const cache = await caches.open(RUNTIME_CACHE);
+/**
+ * Navegación: red primero, SIN cache del navegador para HTML.
+ * Si falla la red, vuelve al index precacheado.
+ * (Esto reduce muchísimo los "pegados" en iOS/Safari).
+ */
+async function networkFirstNav(request) {
   try {
-    const fresh = await fetch(request);
-    if (fresh && fresh.ok) cache.put(request, fresh.clone());
-    return fresh;
+    return await fetch(request, { cache: "no-store" });
   } catch (e) {
-    const cached = await cache.match(request);
-    if (cached) return cached;
     const fallback = await caches.match(BASE + "index.html");
     if (fallback) return fallback;
     throw e;
   }
 }
 
+/** Cache-first para assets */
 async function cacheFirst(request) {
   const cache = await caches.open(RUNTIME_CACHE);
   const cached = await cache.match(request);
   if (cached) return cached;
+
   const fresh = await fetch(request);
   if (fresh && fresh.ok) cache.put(request, fresh.clone());
   return fresh;
@@ -95,28 +101,18 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
   if (!url.pathname.startsWith(BASE)) return;
 
+  // HTML/navigation
   if (isNavigationRequest(request)) {
-    event.respondWith(networkFirst(request));
+    event.respondWith(networkFirstNav(request));
     return;
   }
 
+  // Static assets
   if (isStaticAsset(url)) {
     event.respondWith(cacheFirst(request));
     return;
   }
 
-  event.respondWith(
-    (async () => {
-      const cache = await caches.open(RUNTIME_CACHE);
-      try {
-        const fresh = await fetch(request);
-        if (fresh && fresh.ok) cache.put(request, fresh.clone());
-        return fresh;
-      } catch (e) {
-        const cached = await cache.match(request);
-        if (cached) return cached;
-        throw e;
-      }
-    })()
-  );
+  // Everything else under BASE: cache-first is fine (y más estable)
+  event.respondWith(cacheFirst(request));
 });
