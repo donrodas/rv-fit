@@ -487,10 +487,15 @@ button.active{
 </div>
 
 <!-- Resumen anual -->
-<div class="center">
-  <button onclick="toggleAnnual()">📊 Resumen anual</button>
-</div>
 <div class="annual" id="annual"></div>
+
+<div class="center">
+  <button id="annualBtn" onclick="toggleAnnual()">
+    📊 Mostrar resumen anual
+  </button>
+</div>
+
+
 
 <!-- Acciones (Programación / Respaldo) -->
 <div class="actions-row" id="actionsRow">
@@ -1164,9 +1169,16 @@ function saveHistory(){
 
 /* ========== ANNUAL ========== */
 function toggleAnnual(){
-  annual.classList.toggle("show");
-  renderAnnual();
+  const btn = document.getElementById("annualBtn");
+  const isOpen = annual.classList.toggle("show");
+
+  if(isOpen){
+    btn.textContent = "📊 Ocultar resumen anual";
+  } else {
+    btn.textContent = "📊 Mostrar resumen anual";
+  }
 }
+
 function renderAnnual(){
   if(!annual.classList.contains("show")){
     return;
