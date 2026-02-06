@@ -649,40 +649,74 @@ render();
 
 <script>
 // ====== SW register (scope fijo /rv-fit/) ======
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', async () => {
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register('/rv-fit/sw.js', { scope: '/rv-fit/' });
-      await reg.update();
+      const reg = await navigator.serviceWorker.register("/rv-fit/sw.js", { scope: "/rv-fit/" });
+      window.__swReg = reg;
 
-      if (reg.waiting && navigator.serviceWorker.controller) showUpdateToast(reg.waiting);
+      reg.update().catch(()=>{});
 
-      reg.addEventListener('updatefound', () => {
+      if (reg.waiting && navigator.serviceWorker.controller) showUpdateToast(reg, reg.waiting);
+
+      reg.addEventListener("updatefound", () => {
         const w = reg.installing;
         if (!w) return;
-        w.addEventListener('statechange', () => {
-          if (w.state === 'installed' && navigator.serviceWorker.controller) showUpdateToast(w);
+        w.addEventListener("statechange", () => {
+          if (w.state === "installed" && navigator.serviceWorker.controller) {
+            showUpdateToast(reg, reg.waiting || w);
+          }
         });
       });
 
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
         if (window.__reloading) return;
         window.__reloading = true;
         window.location.reload();
       });
-    } catch (e) { console.error("SW error", e); }
+    } catch (e) {
+      console.error("SW error", e);
+    }
   });
 }
 
-function showUpdateToast(worker) {
-  if (document.getElementById('updateToast')) return;
+function showUpdateToast(reg, worker) {
+  if (document.getElementById("updateToast")) return;
+
   const t = document.createElement("div");
   t.id = "updateToast";
-  t.style.cssText="position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.95);color:#fff;padding:12px 14px;border-radius:16px;font-size:13px;display:flex;gap:12px;align-items:center;z-index:999999";
-  t.innerHTML = `Nueva versión disponible <button id="btnUpdate" style="background:#2563eb;color:#fff;border:none;padding:7px 10px;border-radius:12px;font-size:13px;font-weight:800">Actualizar</button>`;
+  t.style.cssText =
+    "position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.95);color:#fff;padding:12px 14px;border-radius:16px;font-size:13px;display:flex;gap:12px;align-items:center;z-index:999999";
+
+  t.innerHTML = `
+    <span id="updateText">Nueva versión disponible</span>
+    <button id="btnUpdate"
+      style="background:#2563eb;color:#fff;border:none;padding:7px 10px;border-radius:12px;font-size:13px;font-weight:800">
+      Actualizar
+    </button>
+  `;
+
   document.body.appendChild(t);
-  document.getElementById("btnUpdate").addEventListener("click", ()=>worker.postMessage("SKIP_WAITING"));
+
+  const btn = document.getElementById("btnUpdate");
+  const text = document.getElementById("updateText");
+
+  btn.addEventListener("click", () => {
+    btn.disabled = true;
+    btn.style.opacity = ".7";
+    btn.textContent = "Actualizando…";
+    text.textContent = "Aplicando nueva versión";
+
+    const sw =
+      worker ||
+      (reg && reg.waiting) ||
+      (window.__swReg && window.__swReg.waiting);
+
+    if (sw) sw.postMessage("SKIP_WAITING");
+  });
 }
+
+
 </script>
 </body>
 </html>
