@@ -437,45 +437,67 @@ button.active{
 
 
 
-/* ===== Fix iOS look: Limpieza + Programación rápida ===== */
+/* =============================
+   iOS ULTRA polish (2026-02-06)
+   ============================= */
 
-.container,
-.panel,
-.quick-panel{
-  box-sizing: border-box;
-  max-width: 100%;
+.topbar{
+  position: sticky;
+  top: calc(env(safe-area-inset-top) * -1);
+  z-index: 50;
+  margin: -18px -18px 10px;
+  padding: 14px 18px 10px;
+  padding-top: calc(14px + env(safe-area-inset-top));
+  background: rgba(242,242,247,.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(60,60,67,.12);
+  border-top-left-radius: 22px;
+  border-top-right-radius: 22px;
 }
 
-.panel,
-.quick-panel{
-  overflow: hidden;
+.calendar{ margin-top: 6px; }
+
+.day{
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease, opacity .16s ease;
+}
+.day:active{ transform: scale(.985); }
+
+.day.done{ animation: popDone .22s cubic-bezier(.2,.8,.2,1); }
+@keyframes popDone{
+  0%{ transform: scale(.98); }
+  70%{ transform: scale(1.015); }
+  100%{ transform: scale(1); }
 }
 
-/* Programación rápida wrap correcto */
-.quick-row{
-  flex-wrap: wrap !important;
-  justify-content: center;
+/* Pulse (feedback iOS) */
+.pulse{ animation: pulseTap .22s cubic-bezier(.2,.8,.2,1); }
+@keyframes pulseTap{
+  0%{ transform: scale(1); }
+  70%{ transform: scale(1.02); }
+  100%{ transform: scale(1); }
 }
 
-.quick-row strong{
-  width: auto !important;
-  min-width: 70px;
-  text-align: left;
-  opacity: .8;
+/* Transición cambio de mes */
+.calendar.fade{
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity .16s ease, transform .16s ease;
+}
+.calendar{
+  transition: opacity .16s ease, transform .16s ease;
 }
 
-.quick-panel input[type="time"]{
-  max-width: 140px;
+@media (prefers-reduced-motion: reduce){
+  *{ transition:none !important; animation:none !important; }
 }
 
-/* Limpieza siempre visible y ordenado */
-.clean-bar,
-#cleanBar{
-  display: flex !important;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 10px;
+@media (max-width: 420px){
+  .topbar{
+    margin: -16px -16px 10px;
+    padding: 12px 16px 10px;
+    padding-top: calc(12px + env(safe-area-inset-top));
+  }
 }
 
 </style>
@@ -493,6 +515,7 @@ button.active{
 
 <div class="container">
 
+<div class="topbar" role="banner">
 <h1>Entrenamientos</h1>
 
 <div class="nav">
@@ -505,6 +528,8 @@ button.active{
   <button onclick="goToCurrentMonth()">📍 Mes actual</button>
 </div>
 
+
+</div><!-- /topbar -->
 <div class="calendar" id="calendar"></div>
 
 <!-- Barras de avance (solo mes actual) -->
@@ -722,6 +747,12 @@ function showToast(t){
   setTimeout(()=>toast.classList.remove("show"),1500);
 }
 
+
+function pulse(el){
+  if(!el) return;
+  el.classList.add("pulse");
+  setTimeout(()=>el && el.classList && el.classList.remove("pulse"), 220);
+}
 function closePanels(){
   activePanel=null;
   programPanel.classList.remove("show");
