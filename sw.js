@@ -1,6 +1,6 @@
 /* sw.js — RV FIT (GitHub Pages: /rv-fit/) */
 
-const VERSION = "rvfit-v4-2026-02-06b";
+const VERSION = "rvfit-v4-2026-02-06c";
 const STATIC_CACHE = `${VERSION}-static`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 const BASE = "/rv-fit/";
